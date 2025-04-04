@@ -9,15 +9,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 swagger = Swagger(app)
 
-# ✅ Criação do banco na inicialização
+# ✅ Criação do banco + usuário padrão para testes
 with app.app_context():
     db.create_all()
 
-# Suas rotas continuam aqui 👇
+    # Criar usuário padrão se não existir
+    if not Usuario.query.first():
+        usuario_padrao = Usuario(nome="Usuário Teste", email="teste@email.com")
+        db.session.add(usuario_padrao)
+        db.session.commit()
+
+# 📌 ROTA: Cadastrar usuário
 @app.route('/usuarios', methods=['POST'])
 def cadastrar_usuario():
-    ...
-
     """
     Cadastrar novo usuário
     ---
@@ -40,6 +44,7 @@ def cadastrar_usuario():
     db.session.commit()
     return jsonify({"mensagem": "Usuário cadastrado com sucesso!"})
 
+# 📌 ROTA: Listar livros (corrigida)
 @app.route('/livros', methods=['GET'])
 def listar_livros():
     """
@@ -56,10 +61,11 @@ def listar_livros():
             "id": livro.id,
             "titulo": livro.titulo,
             "autor": livro.autor,
-            "usuario": livro.usuario.nome
+            "usuario": livro.usuario.nome if livro.usuario else "Desconhecido"
         })
     return jsonify(resultado)
 
+# 📌 ROTA: Cadastrar livro
 @app.route('/livros', methods=['POST'])
 def cadastrar_livro():
     """
@@ -86,6 +92,7 @@ def cadastrar_livro():
     db.session.commit()
     return jsonify({"mensagem": "Livro cadastrado com sucesso!"})
 
+# 📌 ROTA: Deletar livro por ID
 @app.route('/livro/<int:id>', methods=['DELETE'])
 def deletar_livro(id):
     """
